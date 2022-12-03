@@ -11,17 +11,16 @@
 using namespace std;
 
 
-//constants
+//max constants
 const int KMAX = 50;
 
 //Function Prototypes
 string TrimString(string str);
-
-void dispalyNewton(const vector<double>& c, const vector<double>& x);
 vector<double> generateNewton(const vector<double>& x, vector<double> f); 
+vector<double> standardPolynomial(const vector<double>& newton, const vector<double>& x);
+void dispalyNewton(const vector<double>& c, const vector<double>& x);
 void displayLagrange(const vector<double>& x, vector<double> f);
 void displaySimplifiedPolynomial(const vector<double>& a);
-vector<double> standardPolynomial(const vector<double>& newton, const vector<double>& x);
 void displayDivDiffTree(const vector<double>& x, vector<double> f);
 
 
@@ -88,6 +87,7 @@ int main()
 	displaySimplifiedPolynomial(a);
 }
 
+//Displays the divided diffrence tree
 void displayDivDiffTree(const vector<double>& x, vector<double> f)
 {
 	int N = x.size();
@@ -133,12 +133,15 @@ void displayDivDiffTree(const vector<double>& x, vector<double> f)
 	}
 }
 
+//Calculates Newton Polynomial
 vector<double> generateNewton(const vector<double>& x, vector<double> f)
 {
 	int N = x.size();
 	vector<double> c(N), temp(N);
 
+	//Sets first element in c equal to first coefficent in function
 	c[0] = f[0];
+	//Computes calculations 
 	for (int i = 1; i < N; i++)
 	{
 		for (int j = 0; j < N - i; j++)
@@ -151,7 +154,7 @@ vector<double> generateNewton(const vector<double>& x, vector<double> f)
 	return c;
 }
 
-
+//Displays Newton Polynomial
 void dispalyNewton(const vector<double>& c, const vector<double>& x)
 {
 	cout << "\n\n";
@@ -161,6 +164,7 @@ void dispalyNewton(const vector<double>& c, const vector<double>& x)
 	streamObj << setprecision(2);
 	int start = 0;
 	int N = x.size();
+	//Only prints the first element of c if its not 0, if it is 0 don't print and mark next element as potential first element to print
 	if (c[0] != 0)
 	{
 		cout << TrimString(to_string(c[0]));
@@ -169,14 +173,18 @@ void dispalyNewton(const vector<double>& c, const vector<double>& x)
 	{
 		start += 1;
 	}
+	//iterates over each element of c
 	for (int i = 1; i < N; i++)
 	{
+		//clear streamObj
 		streamObj.str("");
 		streamObj << c[i];
+		//If an element in c = 0 don't print and move to next element
 		if (c[i] != 0)
 		{
 			if (c[i] > 0)
 			{
+				//if the current element is the new start point don't include a "+" at begining
 				if (c[i] == start)
 				{
 					cout << TrimString(streamObj.str());
@@ -190,6 +198,7 @@ void dispalyNewton(const vector<double>& c, const vector<double>& x)
 			{
 				cout << TrimString(streamObj.str());
 			}
+			//Finds all xj in (x-xj) 
 			for (int j = 0; j < i; j++)
 			{
 				streamObj.str("");
@@ -219,14 +228,18 @@ void dispalyNewton(const vector<double>& c, const vector<double>& x)
 	cout << '\n';
 }
 
-
+//Computes and Displays lagrange polynomial
 void displayLagrange(const vector<double>& x, vector<double> f)
 {
 	cout << "\n\n";
 	cout << "Lagrange Polynomial:   " << endl;
+
+	//Format streamObj
 	ostringstream streamObj;
 	streamObj << fixed;
 	streamObj << setprecision(2);
+
+	//Initialize values
 	int start = 0;
 	int N = x.size();
 	int count = 1;
@@ -234,18 +247,26 @@ void displayLagrange(const vector<double>& x, vector<double> f)
 	vector<double> coef(N);
 	vector<string> numer(N);
 	
+	//For each coefficent in f
 	for (int i = 0; i < N;i++)
 	{
+		//initializes den as the ith coeffiecnt of the function
 		den = f[i];
+		//Clear streamObj
 		streamObj.str("");
+
+		//For each value xj in x check that the values are not equal and then put it in (x - xj) form
 		for (int j = 0;j < N;j++)
 		{
+			//Clear streamObj
 			streamObj.str("");
 			if (x[i] != x[j])
 			{
+				//Compute the denominator
 				den *= 1/(x[i] - x[j]);
 				if (den != 0)
 				{
+					//Prints (x-xj) in proper format depending on if xj is "+", "-", or 0
 					if (x[j] == 0)
 					{
 						numer[i] += "(x)";
@@ -277,8 +298,10 @@ void displayLagrange(const vector<double>& x, vector<double> f)
 			}
 			
 		}
+		//Clear streamObj
 		streamObj.str("");
 		streamObj << den;
+		//Prints polynomial in newton form (den +/- den() +/- den()() +/-...)
 		if (den < 0)
 		{
 			cout << TrimString(streamObj.str()) << numer[i];
@@ -308,6 +331,7 @@ vector<double> standardPolynomial(const vector<double>& newton, const vector<dou
 	//Stores the factors for newton polynimial
 	vector<double> poly(N), prev(N);
 
+	//Multiplies out the coeffiecents in newton
 	poly[0] = 1;
 	coeficient[0] = newton[0] * poly[0];
 	for (int i = 1; i < N; i++)
@@ -329,26 +353,34 @@ void displaySimplifiedPolynomial(const vector<double>& a)
 {
 	cout << "\n\n";
 	cout << "Simplified Polynomial" << endl;
+	//Formats streamObj
 	ostringstream streamObj;
 	streamObj << fixed;
 	streamObj << setprecision(2);
+	//Initialize values
 	int N = a.size();
 	int start = N - 1;
+
+	//For each coefficent in a print out appropriate value
 	for (int i = N-1; i > 0; --i)
 	{
+		//Clear streamObj
 		streamObj.str("");
+		//Don't display coefficient if it is 0 or 1
 		if (a[i] != 0 && a[i] != 1)
 		{
 			streamObj << a[i];
 		}
 		else if (a[i] != 0 && a[i] == 1)
 		{
-
+			//do nothing
 		}
+		//mark next element in a as potential first element to print
 		else
 		{
 			start -= 1;
 		}
+		//if degree is 1 don't show x^{1} only x
 		if (i == 1)
 		{
 			if (i == start)
@@ -366,6 +398,7 @@ void displaySimplifiedPolynomial(const vector<double>& a)
 
 			//cout << showpos << TrimString(to_string(a[i])) << "x";	
 		}
+		//Show coefficent times x^{i}
 		else
 		{
 			//cout << showpos << TrimString(to_string(a[i])) << "x^" << noshowpos << i;
@@ -383,8 +416,10 @@ void displaySimplifiedPolynomial(const vector<double>& a)
 			}
 		}
 	}
+	//Clear streamObj
 	streamObj.str("");
 	streamObj << a[0];
+	//Print first element in a
 	if (a[0] < 0)
 	{
 		cout <<  TrimString(streamObj.str());
@@ -396,6 +431,8 @@ void displaySimplifiedPolynomial(const vector<double>& a)
 	//cout << showpos << TrimString(to_string(a[0]));
 	cout << '\n';
 }
+
+//Trims extra 0's in a decimal number ex. 2.40000 => 2.4
 string TrimString(string str)
 {
 	for (int i = str.length() - 1; i > 0; --i)
