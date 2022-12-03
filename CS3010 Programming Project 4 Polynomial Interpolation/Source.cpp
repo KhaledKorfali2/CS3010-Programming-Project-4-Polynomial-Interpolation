@@ -7,6 +7,7 @@
 #include<chrono>
 #include<vector>
 #include <iomanip>
+#include<sstream>
 using namespace std;
 
 
@@ -15,14 +16,13 @@ const int KMAX = 50;
 
 //Function Prototypes
 string TrimString(string str);
-void display1_DArray(vector<float>& matrix, int numofEquations, string matrixName);
-void display1_DArray(vector<int>& matrix, int numofEquations, string matrixName);
-void displayMatrix(vector<vector<float>>& matrix, int numOfEquations);
-void displayMatrix2(vector<vector<float>>& matrix, int numOfEquations);
-void combineMatricies(vector<vector<float>>& a, vector<float>& b, vector<vector<float>>& userEquations, int numOfEquations);
+
 void dispalyNewton(const vector<double>& c, const vector<double>& x);
-vector<double> generateNewton(const vector<double>& x, vector<double> f);          // Gets Newton polynomial
+vector<double> generateNewton(const vector<double>& x, vector<double> f); 
 void displayLagrange(const vector<double>& x, vector<double> f);
+void displaySimplifiedPolynomial(const vector<double>& a);
+vector<double> standardPolynomial(const vector<double>& newton, const vector<double>& x);
+void displayDivDiffTree(const vector<double>& x, vector<double> f);
 
 
 int main()
@@ -34,7 +34,6 @@ int main()
 
 
 	//Variable Declarations
-	float diag;
 	float sum = 0;
 	string userFile = "";
 	
@@ -43,7 +42,7 @@ int main()
 	cin >> userFile;
 
 
-	//Reads in the data line by line storing values in userEquations
+	//Reads in the data line by line storing values in xw and yw respectively
 	vector<double> xw;
 	vector<double> yw;
 	fstream fileData;
@@ -70,127 +69,50 @@ int main()
 				{
 					yw.push_back(stod(num));
 				}
-			}
-			
-
-			//userEquations[curRow] = row;
+			}		
 			curRow += 1;
-			//row.clear();
 		}
 	}
 
 	fileData.close();
 
+	//Calculate Newton and Standard Polynomials
 	vector<double> c = generateNewton(xw, yw);
-
+	vector<double> a = standardPolynomial(c, xw);
+	
+	
+	//Displays Outputs
+	displayDivDiffTree(xw, yw);
 	dispalyNewton(c, xw);
-
-	displayLagrange(xw, yw);
-
-
+	displayLagrange(xw, yw); //caluclations for lagrange done while displaying
+	displaySimplifiedPolynomial(a);
 }
 
-//Combines adjecency matrix "a" with vector matrix "b"
-void combineMatricies(vector<vector<float>>& a, vector<float>& b, vector<vector<float>>& userEquations, int numOfEquations)
-{
-	for (int row = 0; row < numOfEquations; row++)
-	{
-		for (int col = 0; col <= numOfEquations; col++)
-		{
-			if (col == numOfEquations)
-			{
-				userEquations[row][col] = b[row];
-			}
-			else
-			{
-				userEquations[row][col] = a[row][col];
-			}
-		}
-	}
-}
-
-
-//Function that displays an integer-value matrix
-void display1_DArray(vector<int>& matrix, int numofEquations, string matrixName)
-{
-	for (int i = 0; i < numofEquations; i++)
-	{
-		if (i == 0)
-		{
-			cout << matrixName << " = [" << matrix[i];
-		}
-		else
-		{
-			cout << ", " << matrix[i];
-		}
-	}
-	cout << "]" << endl;
-}
-
-//Function that displays a float-value matrix of size n
-void display1_DArray(vector<float>& matrix, int numofEquations, string matrixName)
-{
-	for (int i = 0; i < numofEquations; i++)
-	{
-		if (i == 0)
-		{
-			cout << matrixName << " = [" << matrix[i];
-		}
-		else
-		{
-			cout << ", " << matrix[i];
-		}
-	}
-	cout << "]" << endl;
-}
-
-//Function that displays a float-value matrix of size n x n+1
-void displayMatrix(vector<vector<float>>& matrix, int numOfEquations)
-{
-	for (int i = 0; i < numOfEquations; i++)
-	{
-		for (int j = 0; j < numOfEquations + 1; j++)
-		{
-			cout << matrix[i][j] << "\t";
-		}
-		cout << "\n";
-	}
-}
-
-//Function that displays a float-value matrix of size n x n
-void displayMatrix2(vector<vector<float>>& matrix, int numOfEquations)
-{
-	for (int i = 0; i < numOfEquations; i++)
-	{
-		for (int j = 0; j < numOfEquations; j++)
-		{
-			cout << matrix[i][j] << "\t";
-		}
-		cout << "\n";
-	}
-}
-
-vector<double> generateNewton(const vector<double>& x, vector<double> f)          // Gets Newton polynomial
+void displayDivDiffTree(const vector<double>& x, vector<double> f)
 {
 	int N = x.size();
 	int count = 0;
-	vector<double> c(N), temp(N);
+	vector<double> temp(N);
 
-	c[0] = f[0];
 	cout << "Divided Diffrence Tree" << endl;
-	cout << "x: ";
 	
+	//Displays x values
+	cout << "x: ";
 	for (int i = 0; i < N;i++)
 	{
 		cout << x[i] << " ";
 	}
-	cout << endl <<"f[]: ";
+	
+	//displays f[] values
+	cout << endl << "f[]: ";
 	for (int i = 0; i < N;i++)
 	{
 		cout << f[i] << " ";
 	}
+
+	//displays f[,], f[,,], ... f[,...,] values
 	cout << endl;
-	for (int i = 1; i < N; i++)       // Compute ith differences
+	for (int i = 1; i < N; i++)
 	{
 		count++;
 		cout << "f[";
@@ -201,10 +123,28 @@ vector<double> generateNewton(const vector<double>& x, vector<double> f)        
 		cout << "]: ";
 		for (int j = 0; j < N - i; j++)
 		{
-			temp[j] = (f[j + 1] - f[j]) / (x[j + i] - x[j]);//calculations
-			cout << temp[j] << " ";
+			//originally temp[j]
+			f[j] = (f[j + 1] - f[j]) / (x[j + i] - x[j]);
+			//originally temp[j]
+			cout << f[j] << " ";
 		}
 		cout << endl;
+		//f = temp;
+	}
+}
+
+vector<double> generateNewton(const vector<double>& x, vector<double> f)
+{
+	int N = x.size();
+	vector<double> c(N), temp(N);
+
+	c[0] = f[0];
+	for (int i = 1; i < N; i++)
+	{
+		for (int j = 0; j < N - i; j++)
+		{
+			temp[j] = (f[j + 1] - f[j]) / (x[j + i] - x[j]);
+		}
 		f = temp;
 		c[i] = f[0];
 	}
@@ -216,15 +156,65 @@ void dispalyNewton(const vector<double>& c, const vector<double>& x)
 {
 	cout << "\n\n";
 	cout << "Newton Polynomial:   " << endl;
+	ostringstream streamObj;
+	streamObj << fixed;
+	streamObj << setprecision(2);
+	int start = 0;
 	int N = x.size();
-	cout << c[0];
+	if (c[0] != 0)
+	{
+		cout << TrimString(to_string(c[0]));
+	}
+	else
+	{
+		start += 1;
+	}
 	for (int i = 1; i < N; i++)
 	{
-		cout << showpos << c[i];
-		for (int j = 0; j < i; j++)
+		streamObj.str("");
+		streamObj << c[i];
+		if (c[i] != 0)
 		{
-			cout << "(x" << showpos << -x[j] << ")";
+			if (c[i] > 0)
+			{
+				if (c[i] == start)
+				{
+					cout << TrimString(streamObj.str());
+				}
+				else
+				{
+					cout << "+" << TrimString(streamObj.str());
+				}
+			}
+			else
+			{
+				cout << TrimString(streamObj.str());
+			}
+			for (int j = 0; j < i; j++)
+			{
+				streamObj.str("");
+				if (x[j] == 0)
+				{
+					cout << "(x)";
+				}
+				else if (x[j] < 0)
+				{
+					streamObj << -x[j];
+					cout << "(x" << "+" << TrimString(streamObj.str()) << ")";
+				}
+				else
+				{
+					streamObj << x[j];
+					cout << "(x" << "-" << TrimString(streamObj.str()) << ")";
+				}
+				//cout << "(x" << showpos << TrimString(to_string(-x[j])) << ")";
+			}
 		}
+		else
+		{
+			start += 1;
+		}
+		
 	}
 	cout << '\n';
 }
@@ -234,44 +224,178 @@ void displayLagrange(const vector<double>& x, vector<double> f)
 {
 	cout << "\n\n";
 	cout << "Lagrange Polynomial:   " << endl;
+	ostringstream streamObj;
+	streamObj << fixed;
+	streamObj << setprecision(2);
+	int start = 0;
 	int N = x.size();
 	int count = 1;
 	double den;
 	vector<double> coef(N);
 	vector<string> numer(N);
-
+	
 	for (int i = 0; i < N;i++)
 	{
 		den = f[i];
+		streamObj.str("");
 		for (int j = 0;j < N;j++)
 		{
+			streamObj.str("");
 			if (x[i] != x[j])
 			{
 				den *= 1/(x[i] - x[j]);
-				if (x[j] == 0)
+				if (den != 0)
 				{
-					numer[i] += "(x)";
-					//cout << "(x)";
-				}
-				else
-				{
-					if (x[j] < 0)
+					if (x[j] == 0)
 					{
-						numer[i] += "(x+" + TrimString( to_string(-x[j]) )+ ")";
+						numer[i] += "(x)";
+						//cout << "(x)";
 					}
 					else
 					{
-						numer[i] += "(x-" + TrimString(to_string(x[j])) + ")";
+						if (x[j] < 0)
+						{
+							streamObj << -x[j];
+							numer[i] += "(x+" + TrimString(streamObj.str()) + ")";
+							//numer[i] += "(x+" + TrimString(to_string(-x[j])) + ")";
+						}
+						else
+						{
+							streamObj << x[j];
+							numer[i] += "(x-" + TrimString(streamObj.str()) + ")";
+							//numer[i] += "(x+" + TrimString(to_string(x[j])) + ")";
+						}
+						//cout << "(x" << showpos << -x[j] << ")";
 					}
-					//cout << "(x" << showpos << -x[j] << ")";
 				}
+
+				else
+				{
+					start += 1;
+				}
+				
 			}
 			
-		}		
-		cout << noshowpos << den << numer[i];
+		}
+		streamObj.str("");
+		streamObj << den;
+		if (den < 0)
+		{
+			cout << TrimString(streamObj.str()) << numer[i];
+		}
+		else if (den > 0)
+		{
+			if (i == start)
+			{
+				cout << TrimString(streamObj.str()) << numer[i];
+			}
+			else
+			{
+				cout << "+" << TrimString(streamObj.str()) << numer[i];
+			}
+		}
+		//cout << noshowpos << TrimString(streamObj.str()) << numer[i];
 	}
 }
 
+//Convert Newton Polynomial to Standard Form
+vector<double> standardPolynomial(const vector<double>& newton, const vector<double>& x)
+{
+	int N = x.size();
+
+	//Final coefficeints for x^N, x^N-1, ... x^1, x^0
+	vector<double> coeficient(N, 0.0);        
+	//Stores the factors for newton polynimial
+	vector<double> poly(N), prev(N);
+
+	poly[0] = 1;
+	coeficient[0] = newton[0] * poly[0];
+	for (int i = 1; i < N; i++)
+	{
+		prev = poly;
+		poly[0] = -x[i - 1] * prev[0];
+		coeficient[0] += newton[i] * poly[0];
+		for (int j = 1; j <= i; j++)
+		{
+			poly[j] = prev[j - 1] - x[i - 1] * prev[j];
+			coeficient[j] += newton[i] * poly[j];
+		}
+	}
+
+	return coeficient;
+}
+
+void displaySimplifiedPolynomial(const vector<double>& a)
+{
+	cout << "\n\n";
+	cout << "Simplified Polynomial" << endl;
+	ostringstream streamObj;
+	streamObj << fixed;
+	streamObj << setprecision(2);
+	int N = a.size();
+	int start = N - 1;
+	for (int i = N-1; i > 0; --i)
+	{
+		streamObj.str("");
+		if (a[i] != 0 && a[i] != 1)
+		{
+			streamObj << a[i];
+		}
+		else if (a[i] != 0 && a[i] == 1)
+		{
+
+		}
+		else
+		{
+			start -= 1;
+		}
+		if (i == 1)
+		{
+			if (i == start)
+			{
+				cout << TrimString(streamObj.str()) << "x";
+			}
+			else if (a[i] < 0)
+			{
+				cout <<  TrimString(streamObj.str()) << "x";
+			}
+			else if (a[i] > 0)
+			{
+				cout << "+" << TrimString(streamObj.str()) << "x";
+			}
+
+			//cout << showpos << TrimString(to_string(a[i])) << "x";	
+		}
+		else
+		{
+			//cout << showpos << TrimString(to_string(a[i])) << "x^" << noshowpos << i;
+			if (i == start)
+			{
+				cout << TrimString(streamObj.str()) <<"x^{" << i << "}";
+			}
+			else if (a[i] < 0)
+			{
+				cout <<  TrimString(streamObj.str()) << "x^{" <<  i << "}";
+			}
+			else if (a[i] > 0)
+			{
+				cout << "+" << TrimString(streamObj.str()) << "x^{" <<  i << "}";
+			}
+		}
+	}
+	streamObj.str("");
+	streamObj << a[0];
+	if (a[0] < 0)
+	{
+		cout <<  TrimString(streamObj.str());
+	}
+	else if (a[0] > 0)
+	{
+		cout << "+" << TrimString(streamObj.str());
+	}
+	//cout << showpos << TrimString(to_string(a[0]));
+	cout << '\n';
+}
 string TrimString(string str)
 {
 	for (int i = str.length() - 1; i > 0; --i)
